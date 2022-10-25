@@ -85,7 +85,7 @@ public class blockShuffleCommand implements CommandExecutor, Listener {
                     if(checkIfAllPlayersFoundTheirBlock() || skipInsist) {
                         nextRoundPlease();
                         time = roundTime;
-                        System.out.println("INSIDE second IF");
+                        //System.out.println("INSIDE second IF");
                     }
                     else {
                         broadcastTimeNotifications(time);
@@ -116,10 +116,10 @@ public class blockShuffleCommand implements CommandExecutor, Listener {
 
             @Override
             public void run() {
-                Material[] mat = Material.values();
-                if(mat[i].isBlock()&&mat[i].isSolid()&&i<mat.length-1) {
-                    if(!checkIfBlockContainsExcludeList(mat[i].name())) {
-                        System.out.println("Index - " + i + " Material - " + mat[i]);
+                Material[] material = Material.values();
+                if(material[i].isBlock()&&material[i].isSolid()&&i<material.length-1) {
+                    if(!checkIfBlockContainsExcludeList(material[i].name())) {
+                        System.out.println("Index - " + i + " Material - " + material[i]);
                     }
                 }
                 i++;
@@ -149,9 +149,9 @@ public class blockShuffleCommand implements CommandExecutor, Listener {
     }
 
     public void messageToPlayers() {
-        for (gamePlayer gP : gamePlayers) {
-            gP.onePlayer.sendMessage(ChatColor.GREEN + "You have to find - " + ChatColor.BOLD +
-                    gP.assignedMaterial.toString().replace("_", " ") + ChatColor.RESET
+        for (gamePlayer gamep : gamePlayers) {
+            gamep.onePlayer.sendMessage(ChatColor.GREEN + "You have to find - " + ChatColor.BOLD +
+                    gamep.assignedMaterial.toString().replace("_", " ") + ChatColor.RESET
                     + ChatColor.GREEN + " and stand on it !");
         }
     }
