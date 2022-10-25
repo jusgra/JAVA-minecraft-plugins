@@ -1,2 +1,2 @@
 # minecraft-plugins
-Plugins/Addons to a Minecraft server that you can use
+Plugins/Addons to add to your Minecraft server that you can use;
