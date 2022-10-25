@@ -1,0 +1,9 @@
+name: BlockShuffle
+version: '${project.version}'
+main: me.jstl05.blockshuffle.BlockShuffle
+api-version: 1.19
+commands:
+  blockshuffle:
+    description: Find Random Block game
+    usage: "Basic commands: /<command> start /<command> skip /<command> stop"
+    aliases: bs
