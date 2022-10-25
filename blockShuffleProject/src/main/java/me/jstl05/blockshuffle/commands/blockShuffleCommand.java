@@ -46,13 +46,16 @@ public class blockShuffleCommand implements CommandExecutor, Listener {
 
         switch (args[0].toLowerCase()) {
             case "start" :
-                if(Bukkit.getOnlinePlayers().size()==0) {
-                    sender.sendMessage(ChatColor.AQUA + "" + ChatColor.ITALIC + "There are no players online !");
-                    return true;
+                if(gameInProgress) sender.sendMessage(ChatColor.AQUA + "" + ChatColor.ITALIC + "Game has already started !");
+                else {
+                    if(Bukkit.getOnlinePlayers().size()==0) {
+                        sender.sendMessage(ChatColor.AQUA + "" + ChatColor.ITALIC + "There are no players online !");
+                        return true;
+                    }
+                    gameInProgress = true;
+                    startGame();
+                    putOnlinePlayerToArray();
                 }
-                gameInProgress = true;
-                startGame();
-                putOnlinePlayerToArray();
                 return true;
 
 
@@ -82,6 +85,7 @@ public class blockShuffleCommand implements CommandExecutor, Listener {
             @Override
             public void run() {
                 if(time != 0 && gameInProgress) {
+                    //everyone found their blocks, nextRound (during the Game)
                     if(checkIfAllPlayersFoundTheirBlock() || skipInsist) {
                         nextRoundPlease();
                         time = roundTime;
@@ -93,15 +97,18 @@ public class blockShuffleCommand implements CommandExecutor, Listener {
                         time--;
                     }
                 }
+                //someone did not find their block, game over
                 else if(gameInProgress && !checkIfAllPlayersFoundTheirBlock()){
                     //System.out.println("INSIDE third ELSE");
                     gameInProgress=false;
                     checkWhoLost();
                     cancel();
+                //everyone found their blocks, nextRound (on the Last second)
                 } else if(checkIfAllPlayersFoundTheirBlock() || skipInsist) {
                     //System.out.println("INSIDE fourth ELSE");
                     nextRoundPlease();
                     time = roundTime;
+                //stop command execution
                 } else {
                     //System.out.println("INSIDE fifth ELSE");
                     cancel();
@@ -145,7 +152,6 @@ public class blockShuffleCommand implements CommandExecutor, Listener {
             player.foundTheBlock = false;
         }
         messageToPlayers();
-        System.out.println("NewBlock Assignation");
         skipInsist = false;
     }
 
