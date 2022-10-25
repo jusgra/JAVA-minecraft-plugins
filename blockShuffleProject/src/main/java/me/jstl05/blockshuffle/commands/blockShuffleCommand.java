@@ -110,6 +110,7 @@ public class blockShuffleCommand implements CommandExecutor, Listener {
         }.runTaskTimer(BlockShuffle.getPlugin(), 0, 20);
     }
 
+    //Used for Testing
     public void runTestCycle(){
         new BukkitRunnable() {
             int i = 0;
