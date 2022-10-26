@@ -1,7 +1,7 @@
 package me.jstl05.blockshuffle.commands;
 
 import me.jstl05.blockshuffle.BlockShuffle;
-import me.jstl05.blockshuffle.gamePlayer;
+import me.jstl05.blockshuffle.GamePlayer;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -19,11 +19,12 @@ import java.util.Random;
 
 public class blockShuffleCommand implements CommandExecutor, Listener {
 
-    //game settings
-    private final int roundTime = 300;
-    private final int[] timeNotificationsAt = {300, 240, 180, 120, 60, 30, 15, 10, 5, 4, 3, 2, 1};
-    private final String[] excludeBlocks = {"DIAMOND", "EMERALD", "GOLD", "LAZULI", "PURPUR",
-            "CRACKED", "MOSSY", "EXPOSED", "WEATHERED", "OXIDIZED", "SPONGE", "RESPAWN",
+    //game config
+    private final int ROUND_TIME = 300; //seconds
+    private final int[] TIME_NOTIFICATIONS_AT = {300, 240, 180, 120, 60, 30, 15, 10, 5, 4, 3, 2, 1};
+    private final float  BLOCK_BELOW_THRESHOLD = 0.5f;
+    private final String[] EXCLUDE_BLOCKS = {"DIAMOND", "EMERALD", "GOLD", "LAZULI", "PURPUR", "WALL",
+            "CRACKED", "MOSSY", "EXPOSED", "WEATHERED", "OXIDIZED", "SPONGE", "RESPAWN", "FENCE",
             "CRYING", "BLACKSTONE", "SEA", "MYCELIUM", "REINFORCED", "GILDED", "BASALT", "NYLIUM",
             "PODZOL", "RAW", "HYPHAE", "CORAL", "NETHERITE", "NETHER WART", "MELON", "END", "SIGN",
             "TARGET", "BANNER", "SHROOMLIGHT", "ANCIENT", "CAKE", "SHULKER", "TINTED", "DRAGON_EGG",
@@ -37,7 +38,7 @@ public class blockShuffleCommand implements CommandExecutor, Listener {
 
     private boolean gameInProgress = false;
     private boolean skipInsist = false;
-    private gamePlayer[] gamePlayers;
+    private GamePlayer[] GamePlayers;
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
@@ -53,7 +54,7 @@ public class blockShuffleCommand implements CommandExecutor, Listener {
                         return true;
                     }
                     gameInProgress = true;
-                    startGame();
+                    startGameTimer();
                     putOnlinePlayerToArray();
                 }
                 return true;
@@ -78,9 +79,9 @@ public class blockShuffleCommand implements CommandExecutor, Listener {
         return false;
     }
 
-    public void startGame(){
+    public void startGameTimer(){
         new BukkitRunnable() {
-            int time = roundTime;
+            int time = ROUND_TIME;
 
             @Override
             public void run() {
@@ -88,26 +89,22 @@ public class blockShuffleCommand implements CommandExecutor, Listener {
                     //everyone found their blocks, nextRound (during the Game)
                     if(checkIfAllPlayersFoundTheirBlock() || skipInsist) {
                         nextRoundPlease();
-                        time = roundTime;
-                        //System.out.println("INSIDE second IF");
+                        time = ROUND_TIME;
                     }
                     else {
                         broadcastTimeNotifications(time);
-                        //Bukkit.broadcastMessage(ChatColor.RED + "timer - " + time);
                         time--;
                     }
                 }
                 //someone did not find their block, game over
                 else if(gameInProgress && !checkIfAllPlayersFoundTheirBlock()){
-                    //System.out.println("INSIDE third ELSE");
                     gameInProgress=false;
                     checkWhoLost();
                     cancel();
                 //everyone found their blocks, nextRound (on the Last second)
                 } else if(checkIfAllPlayersFoundTheirBlock() || skipInsist) {
-                    //System.out.println("INSIDE fourth ELSE");
                     nextRoundPlease();
-                    time = roundTime;
+                    time = ROUND_TIME;
                 //stop command execution
                 } else {
                     //System.out.println("INSIDE fifth ELSE");
@@ -126,7 +123,7 @@ public class blockShuffleCommand implements CommandExecutor, Listener {
             public void run() {
                 Material[] material = Material.values();
                 if(material[i].isBlock()&&material[i].isSolid()&&i<material.length-1) {
-                    if(!checkIfBlockContainsExcludeList(material[i].name())) {
+                    if(!isBlockOutsideExcludeList(material[i].name())) {
                         System.out.println("Index - " + i + " Material - " + material[i]);
                     }
                 }
@@ -137,53 +134,51 @@ public class blockShuffleCommand implements CommandExecutor, Listener {
     }
 
     public void checkWhoLost() {
-//        StringBuilder finalMessage = new StringBuilder(100);
-//        finalMessage.append(ChatColor.DARK_AQUA + "Losers of the game - ");
-        for (gamePlayer player : gamePlayers) {
-            if (!player.foundTheBlock)  Bukkit.broadcastMessage(ChatColor.DARK_RED + "" + ChatColor.BOLD + player.onePlayer.getName() + " failed to found his block!");
-                //finalMessage.append(ChatColor.BOLD + player.onePlayer.getName() + ", ");
+        for (GamePlayer player : GamePlayers) {
+            if (!player.foundTheBlock)
+                Bukkit.broadcastMessage(ChatColor.DARK_RED + "" + ChatColor.BOLD +
+                        player.onePlayer.getName() + " failed to found his block!");
         }
-//        Bukkit.broadcastMessage(finalMessage.toString());
     }
 
     public void nextRoundPlease() {
-        for (gamePlayer player : gamePlayers) {
+        for (GamePlayer player : GamePlayers) {
             player.setNewBlock(getRandomBlock());
             player.foundTheBlock = false;
         }
-        messageToPlayers();
+        newBlockAssignedMessageToPlayers();
         skipInsist = false;
     }
 
-    public void messageToPlayers() {
-        for (gamePlayer gamep : gamePlayers) {
-            gamep.onePlayer.sendMessage(ChatColor.GREEN + "You have to find - " + ChatColor.BOLD +
-                    gamep.assignedMaterial.toString().replace("_", " ") + ChatColor.RESET
+    public void newBlockAssignedMessageToPlayers() {
+        for (GamePlayer gamepl : GamePlayers) {
+            gamepl.onePlayer.sendMessage(ChatColor.GREEN + "You have to find - " + ChatColor.BOLD +
+                    gamepl.assignedMaterial.toString().replace("_", " ") + ChatColor.RESET
                     + ChatColor.GREEN + " and stand on it !");
         }
     }
 
     public void putOnlinePlayerToArray(){
-        gamePlayers = new gamePlayer[Bukkit.getOnlinePlayers().size()];
+        GamePlayers = new GamePlayer[Bukkit.getOnlinePlayers().size()];
         int index = 0;
         for (Player player: Bukkit.getOnlinePlayers()) {
-            gamePlayer singleGamer = new gamePlayer(player, getRandomBlock());
-            gamePlayers[index] = singleGamer;
+            GamePlayer singleGamer = new GamePlayer(player, getRandomBlock());
+            GamePlayers[index] = singleGamer;
             index++;
         }
-        messageToPlayers();
+        newBlockAssignedMessageToPlayers();
     }
 
     public boolean checkIfAllPlayersFoundTheirBlock () {
-        int numberFound = 0;
-        for (gamePlayer player: gamePlayers) {
-            if(player.foundTheBlock)  numberFound++;
+        int numberOfPlayersFound = 0;
+        for (GamePlayer player: GamePlayers) {
+            if(player.foundTheBlock)  numberOfPlayersFound++;
         }
-        return numberFound == gamePlayers.length;
+        return numberOfPlayersFound == GamePlayers.length;
     }
 
     public void broadcastTimeNotifications (int time) {
-        for (int singleCheck : timeNotificationsAt){
+        for (int singleCheck : TIME_NOTIFICATIONS_AT){
             if(time==singleCheck) {
                 if(time>60) Bukkit.broadcastMessage(ChatColor.RED + "" + time/60 + " minutes left !");
                 else if (time==60) Bukkit.broadcastMessage(ChatColor.RED + "1 minute left !");
@@ -201,35 +196,35 @@ public class blockShuffleCommand implements CommandExecutor, Listener {
         while(true) {
             rngMaterial = materialsArray[rng.nextInt(materialsArray.length)];
             if(rngMaterial.isBlock() && rngMaterial.isSolid()) {
-                if(!checkIfBlockContainsExcludeList(rngMaterial.name())) break;
+                if(isBlockOutsideExcludeList(rngMaterial.name())) break;
             }
         }
         return rngMaterial;
     }
 
-    public boolean checkIfBlockContainsExcludeList(String current) {
-        for (String singleExcludeBlock : excludeBlocks) {
-            if(current.contains(singleExcludeBlock)) return true;
+    public boolean isBlockOutsideExcludeList(String material) {
+        for (String singleExcludeBlock : EXCLUDE_BLOCKS) {
+            if(material.contains(singleExcludeBlock)) return false;
         }
-        return false;
+        return true;
     }
 
     public void checkIfPlayerFoundTheirBlock (Player movingPlayer) {
-        for (gamePlayer gP : gamePlayers) {
-            if(gP.onePlayer.getUniqueId() == movingPlayer.getUniqueId() && !gP.foundTheBlock) {
+        for (GamePlayer player : GamePlayers) {
+            if(player.onePlayer.getUniqueId() == movingPlayer.getUniqueId() && !player.foundTheBlock) {
                 Material blockBelow = checkTheBlockBeneath(movingPlayer);
-                if(blockBelow==gP.assignedMaterial) someoneFoundTheirBlock(gP);
+                if(blockBelow==player.assignedMaterial) someoneFoundTheirBlock(player);
             }
         }
     }
 
     public Material checkTheBlockBeneath(Player player){
-        Location loc = player.getLocation();
-        loc.setY(loc.getY()-0.5);
-        return loc.getBlock().getType();
+        Location location = player.getLocation();
+        location.setY(location.getY()-BLOCK_BELOW_THRESHOLD);
+        return location.getBlock().getType();
     }
 
-    public void someoneFoundTheirBlock (gamePlayer player) {
+    public void someoneFoundTheirBlock (GamePlayer player) {
         player.foundTheBlock=true;
         Bukkit.broadcastMessage(ChatColor.GOLD + "" + ChatColor.BOLD + player.onePlayer.getName() + " found his block !");
     }

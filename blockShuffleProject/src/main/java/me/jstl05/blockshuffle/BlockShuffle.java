@@ -13,13 +13,11 @@ public final class BlockShuffle extends JavaPlugin {
 
     @Override
     public void onEnable() {
-
         plugin = this;
 
         blockShuffleCommand bsc = new blockShuffleCommand();
         getServer().getPluginManager().registerEvents(bsc, this);
         getCommand("blockshuffle").setExecutor(bsc);
-
     }
 
     @Override
