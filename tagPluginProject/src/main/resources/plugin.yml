@@ -1,0 +1,8 @@
+name: TagPlugin
+version: '${project.version}'
+main: me.jstl05.tagplugin.TagPlugin
+api-version: 1.19
+commands:
+  tag:
+    description: Start the tag game
+    usage: "Basic commands: /<command> hunterName runnerName; /<command> stop"
